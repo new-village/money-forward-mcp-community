@@ -1,0 +1,75 @@
+{
+  "name": "money-forward-mcp-community",
+  "version": "0.1.0",
+  "description": "Unofficial, community-maintained stdio MCP server for Money Forward ME",
+  "type": "module",
+  "bin": {
+    "money-forward-mcp-community": "dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "format": "prettier --check .",
+    "format:write": "prettier --write .",
+    "prepack": "npm run build && npm test",
+    "release": "semantic-release"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "money-forward",
+    "money-forward-me",
+    "finance"
+  ],
+  "license": "MIT",
+  "author": "new-village",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/new-village/money-forward-mcp-community.git"
+  },
+  "bugs": {
+    "url": "https://github.com/new-village/money-forward-mcp-community/issues"
+  },
+  "homepage": "https://github.com/new-village/money-forward-mcp-community#readme",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "cheerio": "^1.2.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@types/node": "^26.1.0",
+    "eslint": "^10.7.0",
+    "prettier": "^3.9.5",
+    "semantic-release": "^25.0.2",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.64.0",
+    "vitest": "^4.1.10"
+  },
+  "optionalDependencies": {
+    "playwright": "^1.61.1"
+  }
+}
