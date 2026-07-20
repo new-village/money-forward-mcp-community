@@ -1,5 +1,5 @@
 import { saveCookie, type AuthStatus } from "./auth.js";
-import { MoneyForwardClient } from "./client.js";
+import { MoneyForwardApiError, MoneyForwardClient } from "./client.js";
 
 interface BrowserCookie {
   name: string;
@@ -16,7 +16,6 @@ export interface BrowserLoginOptions {
 export interface BrowserLoginResult {
   authenticated: boolean;
   saved: boolean;
-  cookiePreview: string;
   message: string;
   configPath?: string;
 }
@@ -62,14 +61,27 @@ export async function runBrowserLogin(
       const browserCookies = await context.cookies();
       try {
         lastCookie = cookiesToHeader(browserCookies);
-        const client = new MoneyForwardClient({ cookie: lastCookie });
-        await client.authCheck();
-        const shouldSave = options.save ?? true;
-        const status = shouldSave ? await saveCookie(lastCookie) : undefined;
-        return buildResult(lastCookie, shouldSave, status);
-      } catch {
-        // The user may still be entering credentials or completing MFA.
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message.includes("No moneyforward.com cookies")
+        ) {
+          continue;
+        }
+        throw error;
       }
+      const client = new MoneyForwardClient({ cookie: lastCookie });
+      try {
+        await client.authCheck();
+      } catch (error) {
+        if (error instanceof MoneyForwardApiError && error.status === 401) {
+          continue;
+        }
+        throw error;
+      }
+      const shouldSave = options.save ?? true;
+      const status = shouldSave ? await saveCookie(lastCookie) : undefined;
+      return buildResult(shouldSave, status);
     }
 
     throw new Error(
@@ -93,15 +105,13 @@ async function importPlaywright(): Promise<typeof import("playwright")> {
 }
 
 function buildResult(
-  cookie: string,
   saved: boolean,
-  status?: Pick<AuthStatus, "configPath" | "cookiePreview">,
+  status?: Pick<AuthStatus, "configPath">,
 ): BrowserLoginResult {
   return {
     authenticated: true,
     saved,
     ...(status?.configPath ? { configPath: status.configPath } : {}),
-    cookiePreview: status?.cookiePreview ?? previewCookie(cookie),
     message: status?.configPath
       ? `Money Forward ME authentication configured. Cookie saved to ${status.configPath}.`
       : "Money Forward ME authentication configured from browser login.",
@@ -131,9 +141,4 @@ function isMoneyForwardDomain(domain: string): boolean {
     normalized === "moneyforward.com" ||
     normalized.endsWith(".moneyforward.com")
   );
-}
-
-function previewCookie(cookie: string): string {
-  if (cookie.length <= 8) return "********";
-  return `${cookie.slice(0, 4)}…${cookie.slice(-4)}`;
 }

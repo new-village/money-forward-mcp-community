@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
@@ -19,9 +19,14 @@ export interface AuthStatus {
   configured: boolean;
   source: "env" | "config" | "none";
   configPath: string;
-  cookiePreview?: string;
   message: string;
   suggestedTools?: string[];
+}
+
+export interface CookieContext {
+  cookie: string;
+  source: "env" | "config";
+  configPath: string;
 }
 
 export class AuthRequiredError extends Error {
@@ -32,11 +37,20 @@ export class AuthRequiredError extends Error {
 }
 
 export async function readCookie(options: AuthOptions = {}): Promise<string> {
+  return (await readCookieContext(options)).cookie;
+}
+
+export async function readCookieContext(
+  options: AuthOptions = {},
+): Promise<CookieContext> {
+  const configPath = resolveConfigPath(options);
   const envCookie = readCookieFromEnv(options.env ?? process.env);
-  if (envCookie) return envCookie;
+  if (envCookie) return { cookie: envCookie, source: "env", configPath };
 
   const storedCookie = await readCookieFromConfig(options);
-  if (storedCookie) return storedCookie;
+  if (storedCookie) {
+    return { cookie: storedCookie, source: "config", configPath };
+  }
 
   throw new AuthRequiredError(
     "Money Forward ME cookie is not configured. Use money_forward_auth_login, money_forward_set_cookie, or MONEY_FORWARD_COOKIE.",
@@ -53,7 +67,6 @@ export async function authStatus(
       configured: true,
       source: "env",
       configPath,
-      cookiePreview: previewCookie(envCookie),
       message:
         "Money Forward ME cookie is configured from an environment variable.",
     };
@@ -65,7 +78,6 @@ export async function authStatus(
       configured: true,
       source: "config",
       configPath,
-      cookiePreview: previewCookie(storedCookie),
       message:
         "Money Forward ME cookie is configured from the local config file.",
     };
@@ -91,11 +103,13 @@ export async function saveCookie(
 
   const configPath = resolveConfigPath(options);
   await mkdir(dirname(configPath), { recursive: true });
+  const temporaryPath = `${configPath}.${process.pid}.${Date.now()}.tmp`;
   await writeFile(
-    configPath,
+    temporaryPath,
     `${JSON.stringify({ cookie: trimmed, updatedAt: new Date().toISOString() }, null, 2)}\n`,
     { mode: 0o600 },
   );
+  await rename(temporaryPath, configPath);
   return authStatus({ ...options, env: {} });
 }
 
@@ -143,9 +157,4 @@ async function readCookieFromConfig(
     }
     throw error;
   }
-}
-
-function previewCookie(cookie: string): string {
-  if (cookie.length <= 8) return "********";
-  return `${cookie.slice(0, 4)}…${cookie.slice(-4)}`;
 }

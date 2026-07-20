@@ -22,12 +22,12 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check": "tsc -p tsconfig.json --noEmit",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "npm run check",
     "test": "vitest run",
     "lint": "eslint .",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
-    "prepack": "npm run build && npm test",
+    "prepack": "npm run format && npm run check && npm run lint && npm run build && npm test",
     "release": "semantic-release"
   },
   "keywords": [

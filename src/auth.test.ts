@@ -2,7 +2,12 @@ import { mkdtemp, readFile, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { authStatus, readCookie, saveCookie } from "./auth.js";
+import {
+  authStatus,
+  readCookie,
+  readCookieContext,
+  saveCookie,
+} from "./auth.js";
 
 describe("Money Forward authentication config", () => {
   it("prefers an environment cookie over the config file", async () => {
@@ -22,11 +27,16 @@ describe("Money Forward authentication config", () => {
     const status = await saveCookie(cookie, { configPath });
 
     expect((await stat(configPath)).mode & 0o777).toBe(0o600);
-    expect(status.cookiePreview).not.toContain("very-secret-value");
+    expect(status).not.toHaveProperty("cookiePreview");
     expect(await readFile(configPath, "utf8")).toContain(cookie);
     await expect(authStatus({ configPath, env: {} })).resolves.toMatchObject({
       configured: true,
       source: "config",
+    });
+    await expect(readCookieContext({ configPath, env: {} })).resolves.toEqual({
+      cookie,
+      source: "config",
+      configPath,
     });
   });
 });
