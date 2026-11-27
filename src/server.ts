@@ -89,6 +89,12 @@ const transactionSchema = z.object({
   direction: z.enum(["income", "expense"]),
   calculationTarget: z.boolean(),
   institution: z.string().nullable(),
+  transferAccount: z
+    .string()
+    .nullable()
+    .describe(
+      "Counterpart account when Money Forward marks the row as a transfer (振替); null otherwise",
+    ),
   majorCategory: z.string().nullable(),
   minorCategory: z.string().nullable(),
   memo: z.string().nullable(),

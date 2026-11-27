@@ -570,6 +570,16 @@ export class MoneyForwardClient {
         const description = cells.eq(2).text().replace(/\s+/g, " ").trim();
         const amount = parseDisplayNumber(cells.eq(3).text());
         if (!shortDate || !description || amount === null) return;
+        // Transfer rows render the counterpart account in a nested
+        // `.transfer_account_box`; keep it out of the institution name.
+        const institutionCell = cells.eq(4).clone();
+        const transferAccount =
+          institutionCell
+            .find(".transfer_account_box")
+            .remove()
+            .text()
+            .replace(/\s+/g, " ")
+            .trim() || null;
         const memoCell = cells.eq(7);
         const memo =
           memoCell.text().replace(/\s+/g, " ").trim() ||
@@ -586,7 +596,9 @@ export class MoneyForwardClient {
               .eq(0)
               .find('input[name="user_asset_act[is_target]"]')
               .attr("value") === "1",
-          institution: cells.eq(4).text().replace(/\s+/g, " ").trim() || null,
+          institution:
+            institutionCell.text().replace(/\s+/g, " ").trim() || null,
+          transferAccount,
           majorCategory: cells.eq(5).text().replace(/\s+/g, " ").trim() || null,
           minorCategory: cells.eq(6).text().replace(/\s+/g, " ").trim() || null,
           memo,

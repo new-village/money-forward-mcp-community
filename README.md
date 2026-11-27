@@ -202,6 +202,7 @@ Use explicit `YYYY-MM` whenever reproducibility matters. If omitted, Money Forwa
 - `direction`: `all`, `income`, or `expense`
 - `calculationTargetOnly`: exclude rows Money Forward does not use in household-book calculations
 - Transaction `amount`: income positive, expense negative
+- Transaction `transferAccount`: for rows Money Forward marks as a transfer (振替), the counterpart account shown under the institution; `null` otherwise
 - Summary `income` and `expense`: both positive totals
 - Summary `balance`: income minus expense
 
