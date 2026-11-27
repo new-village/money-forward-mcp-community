@@ -294,6 +294,35 @@ describe("MoneyForwardClient", () => {
     });
   });
 
+  it("separates the transfer counterpart from the institution", async () => {
+    const transactionHtml = `<script>startDate: '2026/01/01', endDate: '2026/01/31'</script>
+      <table id="cf-detail-table"><tr><th>Date</th></tr>
+      <tr class="transaction_list mf-grayout"><td></td><td><div><span>01/27(火)</span></div></td>
+      <td><div><span>Card payment</span></div></td>
+      <td class="number amount"><div><span class="offset">-20,475</span><div class="offset">(振替)</div></div></td>
+      <td class="calc">Example Bank <div class="transfer_account_box">Example Card</div></td>
+      <td class="lctg"></td><td class="mctg"></td><td></td></tr>
+      <tr class="transaction_list target-active"><td></td><td>01/30(金)</td><td>Lunch</td><td>-1,200</td>
+      <td class="note calc">Example Card</td><td>Food</td><td>Dining</td><td></td></tr></table>`;
+    const client = new MoneyForwardClient({
+      cookie: "session=secret",
+      fetchImpl: vi.fn(async (input: string | URL | Request) =>
+        htmlResponse(transactionHtml, String(input)),
+      ) as typeof fetch,
+    });
+    const { transactions } = await client.getTransactions();
+    expect(transactions[0]).toMatchObject({
+      date: "2026-01-27",
+      amount: -20475,
+      institution: "Example Bank",
+      transferAccount: "Example Card",
+    });
+    expect(transactions[1]).toMatchObject({
+      institution: "Example Card",
+      transferAccount: null,
+    });
+  });
+
   it("persists refreshed cookies only when the client callback is configured", async () => {
     const onCookieUpdate = vi.fn(async () => undefined);
     const fetchMock = vi.fn(async () => {

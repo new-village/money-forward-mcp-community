@@ -71,6 +71,8 @@ export interface MoneyForwardTransaction {
   direction: "income" | "expense";
   calculationTarget: boolean;
   institution: string | null;
+  /** Counterpart account of an internal transfer, or null for ordinary rows. */
+  transferAccount: string | null;
   majorCategory: string | null;
   minorCategory: string | null;
   memo: string | null;
